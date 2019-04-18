@@ -34,6 +34,8 @@ void setup() {
   Serial.begin(115200);
 
   // init pin
+  pinMode(14, INPUT_PULLUP); // btn1
+  pinMode(15, INPUT_PULLUP); // btn2
   pinMode(LED_BUILTIN, OUTPUT); // led builtin
   pinMode(16, OUTPUT); // barre du milieu
   pinMode(17, OUTPUT); // fleche gauche
@@ -60,6 +62,10 @@ void setup() {
   timerAlarmWrite(timer, 1000000, true);
   timerAlarmEnable(timer);
   Serial.println("timer started");
+
+  //button interrupt
+  attachInterrupt(digitalPinToInterrupt(14), onButtonPress1, RISING);
+  attachInterrupt(digitalPinToInterrupt(15), onButtonPress2, RISING);
 }
 
 // fonction blinker update
@@ -86,6 +92,33 @@ void onTimer() {
     digitalWrite(18, LOW);
   }
 
+}
+
+// fonction button interrupt
+void onButtonPress1() {
+  noInterrupts();
+  flecheg = 0;
+  Serial.println("button pressed 1");
+  if (fleched == 1) {
+    fleched = 0;
+  } else {
+    fleched = 1;
+  }
+  delay(500);
+  interrupts();
+}
+// fonction button interrupt
+void onButtonPress2() {
+  noInterrupts();
+  fleched = 0;
+  Serial.println("button pressed 2");
+  if (flecheg == 1) {
+    flecheg = 0;
+  } else {
+    flecheg = 1;
+  }
+  delay(500);
+  interrupts();
 }
 
 
@@ -178,7 +211,7 @@ void loop() {
           digitalWrite(LED_BUILTIN, LOW);
         }
 
-        //arrow
+        //arrow /D /G /E route
         if (currentLine.endsWith("GET /D")) {
           //Serial.println("fleche D");
           fleched = 1;
