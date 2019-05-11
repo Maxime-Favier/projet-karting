@@ -20,6 +20,7 @@ int flecheg = 0;
 int fleched = 0;
 boolean etat = true;
 int ledstat = 0;
+int indiclum = 0;
 
 // timer init
 hw_timer_t * timer = NULL;
@@ -35,8 +36,10 @@ void setup() {
 
   // init pin
   pinMode(14, INPUT_PULLUP); // btn1
-  pinMode(15, INPUT_PULLUP); // btn2
-  pinMode(LED_BUILTIN, OUTPUT); // led builtin
+  pinMode(4, INPUT_PULLUP); // btn2
+  pinMode(15, INPUT_PULLUP); // btn3
+  pinMode(25, OUTPUT); //avert
+  //pinMode(LED_BUILTIN, OUTPUT); // led builtin
   pinMode(16, OUTPUT); // barre du milieu
   pinMode(17, OUTPUT); // fleche gauche
   pinMode(18, OUTPUT); // flèche droite
@@ -63,15 +66,11 @@ void setup() {
   timerAlarmEnable(timer);
   Serial.println("timer started");
 
-  //button interrupt
-  attachInterrupt(digitalPinToInterrupt(14), onButtonPress1, RISING);
-  attachInterrupt(digitalPinToInterrupt(15), onButtonPress2, RISING);
 }
 
 // fonction blinker update
 void onTimer() {
   etat = !etat;
-  //Serial.println(etat);
   if (etat == true) {
     if (fleched == 1) {
       //turn on right arrow
@@ -86,51 +85,65 @@ void onTimer() {
     }
   }
   if (etat == false) {
-    //turn of all led
+    //turn off all led
     digitalWrite(16, LOW);
     digitalWrite(17, LOW);
     digitalWrite(18, LOW);
   }
-
-}
-
-// fonction button interrupt
-void onButtonPress1() {
-  noInterrupts();
-  flecheg = 0;
-  Serial.println("button pressed 1");
-  if (fleched == 1) {
-    fleched = 0;
-  } else {
-    fleched = 1;
-  }
-  delay(500);
-  interrupts();
-}
-// fonction button interrupt
-void onButtonPress2() {
-  noInterrupts();
-  fleched = 0;
-  Serial.println("button pressed 2");
-  if (flecheg == 1) {
-    flecheg = 0;
-  } else {
-    flecheg = 1;
-  }
-  delay(500);
-  interrupts();
 }
 
 
 void loop() {
 
+  //Serial.println(String(digitalRead(15)));
   // sound meter read
   sensorValue = analogRead(sensorPin);
-  mm = mm + abs(sensorValue - calibration) - arr[plus_ancien];
+  //mm = mm + abs(sensorValue - calibration) - arr[plus_ancien];
+  // put value into array
   arr[plus_ancien] = abs(sensorValue - calibration);
   plus_ancien = plus_ancien + 1;
   if (plus_ancien == 256) {
     plus_ancien = 0;
+  }
+
+  //buttons
+  if (digitalRead(14) == 0) {
+    // button right arrow
+    Serial.println("button pressed-right");
+    // turn off left arrow
+    flecheg = 0;
+    // turn off on if led is on
+    if (fleched == 1) {
+      fleched = 0;
+    } 
+    // turn on on if led is off
+    else {
+      fleched = 1;
+    }
+    delay(400);
+  }
+  // same with the left arrow
+  if (digitalRead(4) == 0) {
+    Serial.println("button pressed-left");
+    // turn off right arrow
+    fleched = 0;
+    if (flecheg == 1) {
+      flecheg = 0;
+    } else {
+      flecheg = 1;
+    }
+    delay(400);
+  }
+
+  if(digitalRead(15) == 0){
+    if (indiclum == 0){
+        digitalWrite(25,HIGH);
+        indiclum = 1;
+    }else{
+        digitalWrite(25,LOW);
+        indiclum = 0;
+    }
+    delay(400);
   }
 
   // webserver
@@ -187,7 +200,7 @@ void loop() {
                            + String(accel_max) +
                            "<br/>"
                            "<a href='/G'> Allumer la fleche gauche </a>"
-                           "<a style='margin-left: 30px;' href='/D'> Allumer la fleche droit </a>"
+                           "<a style='margin-left: 30px;' href='/D'> Allumer la fleche droite</a>"
                            "<br/>"
                            "<a style='margin-left: 150px;' href='/E'> Eteindre les fleches </a>"
                            "</body></html>";
@@ -205,10 +218,14 @@ void loop() {
 
         // builtin Led - test /H & /L route
         if (currentLine.endsWith("GET /H")) {
-          digitalWrite(LED_BUILTIN, HIGH);
+          //digitalWrite(LED_BUILTIN, HIGH);
+          indiclum = 1;
+          digitalWrite(25, HIGH);
         }
         if (currentLine.endsWith("GET /L")) {
-          digitalWrite(LED_BUILTIN, LOW);
+          //digitalWrite(LED_BUILTIN, LOW);
+          indiclum = 0;
+          digitalWrite(25, LOW);
         }
 
         //arrow /D /G /E route
