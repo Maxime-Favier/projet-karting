@@ -14,14 +14,17 @@ int calibration;
 int arr[256];
 int plus_ancien = 0;
 int mm = 0;
-float accel_glob = 0.5;
-float accel_max = 0.7;
+float accel_glob = 0.0;
+float accel_max = 0.0;
 int flecheg = 0;
 int fleched = 0;
 boolean etat = true;
 int ledstat = 0;
 int indiclum = 0;
-
+const int axeX = 32 ;
+const int axeY = 33 ;
+const int axeZ = 34 ;
+float calib_value = 0.0033; //Constante de calibration
 // timer init
 hw_timer_t * timer = NULL;
 
@@ -106,6 +109,25 @@ void loop() {
     plus_ancien = 0;
   }
 
+
+  //partie accéléromètre
+  
+  //float accel_max = 0; //Variable où l'on stock la valeur maximale enregistrée
+  float accel_x = calib_value * analogRead(axeX) - 1; //Assignation de l'axe X à l'entrée A2 de l'Arduino et stockage de la valeur dans la variable "accel_x"
+  float accel_y = calib_value * analogRead(axeY) - 1; //Assignation de l'axe Y à l'entrée A1 de l'Arduino et stockage de la valeur dans la variable "accel_y"
+  float accel_z = calib_value * analogRead(axeZ) - 1; //Assignation de l'axe Z à l'entrée A0 de l'Arduino et stockage de la valeur dans la variable "accel_z"
+  float accel_x_abs = abs(accel_x / calib_value);
+  float accel_y_abs = abs(accel_y / calib_value);
+  //float accel_glob = 0;
+
+  //On calcule la norme de l'acélération sur X et Y
+  accel_glob = (sqrt(sq(accel_x_abs) + sq(accel_y_abs)));
+  //Serial.println(accel_glob);
+
+  if (accel_glob >= accel_max) {
+    accel_max = accel_glob;
+  } //On compare les valeurs de l'axe X avec la dernière valeur max stocké dans la variable "accel_xmax"
+
   //buttons
   if (digitalRead(14) == 0) {
     // button right arrow
@@ -115,7 +137,7 @@ void loop() {
     // turn off on if led is on
     if (fleched == 1) {
       fleched = 0;
-    } 
+    }
     // turn on on if led is off
     else {
       fleched = 1;
@@ -135,13 +157,13 @@ void loop() {
     delay(400);
   }
 
-  if(digitalRead(15) == 0){
-    if (indiclum == 0){
-        digitalWrite(25,HIGH);
-        indiclum = 1;
-    }else{
-        digitalWrite(25,LOW);
-        indiclum = 0;
+  if (digitalRead(15) == 0) {
+    if (indiclum == 0) {
+      digitalWrite(25, HIGH);
+      indiclum = 1;
+    } else {
+      digitalWrite(25, LOW);
+      indiclum = 0;
     }
     delay(400);
   }
@@ -251,4 +273,5 @@ void loop() {
 
   // small delay to keep cpu level low
   delay(50);
+
 }
